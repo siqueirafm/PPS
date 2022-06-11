@@ -93,7 +93,6 @@ private:
   void eval_T_spline_ww(double *, double, double) const;
 
 private:
-  const double BIG_ONE;
   EVALSTRUCT **ev_struct;
   int Nmax;
 };

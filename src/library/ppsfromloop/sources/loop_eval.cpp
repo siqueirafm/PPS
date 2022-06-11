@@ -12,15 +12,8 @@
  *
  * \version 1.0
  * \date December 2008
- */
-
-#include "loop_eval.hpp"
-
-#include <cmath>   // pow, log2, floor
-#include <cstdlib> // exit
-#include <stdio.h> // fopen, fclose, fread, fwrite, fprintf
-
-/*********************************************************************
+ *
+ * \attention
  *
  * This  code  was borrowed  from  Jos  Stam,  who created  the  first
  * approach for exact evaluation of Catmull-Clark and Loop subdivision
@@ -39,11 +32,17 @@
  *
  * mfsiqueira at gmail dot com
  *
- ********************************************************************/
+ */
+
+#include "loop_eval.hpp"
+
+#include <cmath>   // pow, log2, floor
+#include <cstdlib> // exit
+#include <stdio.h> // fopen, fclose, fread, fwrite, fprintf
 
 namespace ppsfromloop {
 
-EvalStruct::EvalStruct(const char *fname) : BIG_ONE(1e10) {
+EvalStruct::EvalStruct(const char *fname) {
   FILE *f_in;
   int i, N, K, nread, nread1, nread2, nread3;
 

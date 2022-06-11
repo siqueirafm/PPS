@@ -147,7 +147,7 @@ Bezier::Bezier(double *param_pts, double *image_pts, unsigned np, unsigned m,
       }
     }
 
-    delete A;
+    delete[] A;
   }
 
   if (AtA != 0) {
@@ -157,7 +157,7 @@ Bezier::Bezier(double *param_pts, double *image_pts, unsigned np, unsigned m,
       }
     }
 
-    delete AtA;
+    delete[] AtA;
   }
 
   if (AtB != 0) {
@@ -167,7 +167,7 @@ Bezier::Bezier(double *param_pts, double *image_pts, unsigned np, unsigned m,
       }
     }
 
-    delete AtB;
+    delete[] AtB;
   }
 
   delete[] Y;
