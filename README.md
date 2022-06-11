@@ -32,7 +32,7 @@ Computers & Graphics, 33(3), 2009, p. 331-340
 
 ## INSTALLATION
 
-You need cmake version 3.14 or higher and a C++ compiler that supports standard 17.  
+You need cmake version 3.15 or higher and a C++ compiler that supports standard 17.  
 To build the code, open a terminal, enter directory PPS, and run cmake as follows:  
 
 ```

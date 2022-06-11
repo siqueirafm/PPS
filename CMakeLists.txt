@@ -29,18 +29,18 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
   # indicate documentation build as an option and set it to ON by default
-  # option(BUILD_DOC "Build documentation" ON)
+  option(BUILD_DOC "Build documentation" ON)
 
   # docs only available if this is the main app
-  # find_package(Doxygen QUIET)
-  # if (Doxygen_FOUND)
-  #  add_subdirectory(doc)
-  #  install(CODE  "EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target doc)")
-  #  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/doc)
-  #  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/latex DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/doc)
-  # else()
-  #  message (STATUS "Doxygen not found, not building docs")
-  # endif()
+  find_package(Doxygen QUIET)
+  if (Doxygen_FOUND)
+    add_subdirectory(doc)
+    install(CODE  "EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target doc)")
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/doc)
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/latex DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/doc)
+  else()
+    message (STATUS "Doxygen not found, not building docs")
+  endif()
 endif()
 
 # Library code is here
