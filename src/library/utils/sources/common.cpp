@@ -24,8 +24,7 @@ std::string to_lower(const std::string &str) {
   std::string copyStr(str);
 
   std::transform(std::begin(copyStr), std::end(copyStr), std::begin(copyStr),
-                 [](unsigned char ch) { return std::tolower(ch); });
-
+                 [](unsigned char ch) { return static_cast<unsigned char>(std::tolower(ch)); });
   return copyStr;
 }
 
