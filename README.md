@@ -18,7 +18,7 @@ The code is organized as follows:
 
 In a nutshell, this code implements the surface representation described in the papers
 
-Jean Gallier and Dianna Xu and Marcelo Siqueira  
+Jean Gallier and Dianna Xu and Marcelo Siqueira    
 Parametric pseudo-manifolds  
 Differential Geometry and its Applications, 30(6), 2012, p. 702-736  
 [DOI](https://doi.org/10.1016/j.difgeo.2012.09.002)
