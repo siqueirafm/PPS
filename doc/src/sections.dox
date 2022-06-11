@@ -14,10 +14,8 @@ two-dimensional domains.
 
 A detailed discussion on parametric pseudo manifolds can be found in
 
-\li   Siqueira,   M.,   Xu,   D.,   Gallier,   J.   "Construction   of
-\f$C^{\infty}\f$-surfaces  from  triangular  meshes  using  parametric
-pseudo-manifolds",   Technical  Report  MS-CIS-08-14,   Department  of
-Computer and Information Science, University of Pennsylvania, 2008.
+\li Gallier, J., Xu,  D., Siqueira, M.  "Parametric pseudo-manifolds",
+Differential Geometry and its Applications, 30(6), 2012, p. 702-736.
 
 A shorter discussion on parametric pseudo manifolds can be found in
 
@@ -32,15 +30,18 @@ using  parametric pseudo-manifolds",  Computer  Graphics, 33(3),  June
 
 /** \page install Installing and compiling the library
 
-The  PPS library  can be  easily installed  by unzipping  the  file \c
-pps-distribution.zip.  After  doing that,  one should see  a directory
-named \c pps-distribution with the  files \c install.sh and \c run.sh,
-and  subdirectories  "bin", "data",  "dcel",  "doc", "lib",  "offlib",
-"pps",  "ppsfrompnt",  and   "ppsfromloop"  inside.   To  compile  the
-library, just execute
+The PPS library can be easily installed by cloning its GitHub repository
 
 \code
-sh install.sh
+git clone git@github.com:siqueirafm/PPS.git
+\endcode
+
+and build the libraries and applications using \c cmake as follows:
+
+\code
+cmake -S . -B build  
+cmake --build build --config Release  
+cmake --install build --prefix <full to the PPS directory or where else you want to have the executables>
 \endcode
 
 If  everything goes  as expected,  one should  see the  executables \c
@@ -51,8 +52,9 @@ learn more about the test code.
 The  current version  of  the library  was  successfully compiled  and
 tested using the following operating systems / compilers.
 
-\li Linux / GNU gcc 4.4  
-\li Mac OSX 10.6 / GNU gcc 4.2 
+\li Ubuntu 20.04.4 LTS / GNU gcc (Version 9.4.0)  
+\li Mac OSX 11.6.1 / clang (Version 13.0.0)
+\li Windows 10 / Visual Studio 15 2017 (Version 15.9.38)
 
 */
 
@@ -853,19 +855,21 @@ meshes are stored  in OFF files. The command-line  to execute the test
 code is as follows:
 
 \code
-sampler-pnt <arg1> <arg2>
+sampler-pnt <arg1> <arg2> <arg 3>
 \endcode
 
 where
 
-\li \c arg1 is the name of an OFF file describing the input triangle mesh.
+\li \c arg1 is the full path to an OFF file describing the input triangle mesh.
 
 \li \c arg2 is the sampling rate or level-of-detail of the output mesh.
+
+\li \c arg3 is the full path to an output directory where the output mesh will be written.
 
 For instance,
 
 \code
-sampler-pnt ./data/knot 3
+sampler-pnt ./examples/knot 3 ./output
 \endcode
 
 generates two files: \c  knot-pnt-pps-3.off and \c knot-pnt-3.pps. The
@@ -873,9 +877,9 @@ former file contains  a triangle mesh whose vertices  are defined over
 the PPS, while the latter file contains a triangle mesh whose vertices
 are defined over the PNT surface from which the PPS was generated.
 
-You can  find some triangle  meshes inside directory "data".   You can
-also   find  code   for   generating  PPS   from  Loop's   subdivision
-surfaces.  This code is  inside directory  "ppsfromloop" and  has been
+You can  find some triangle  meshes inside directory  "examples".  You
+can  also  find  code  for  generating  PPS  from  Loop's  subdivision
+surfaces.  This  code is inside  directory "ppsfromloop" and  has been
 partially documented.
 
 */
@@ -921,14 +925,13 @@ of the copyright holder.  <br>
 
 /** \page ack Acknowledgements
 
-I  would like to  acknowledge Fernando  Goes, who  is currently  a PhD
-student at Caltech-USA, for suggesting  class design of the PPS class.
-I am also very grateful to my co-authors and collaborators, Luiz Velho
-(IMPA-RJ, Brazil),  Luis Gustavo Nonato (ICMC-USP,  Brazil), Dianna Xu
-(Bryn  Mawr  College,  USA),  Jean  Gallier (UPenn,  USA),  and  Dimas
-Martínez Morera (UFAL, Brazil) for  working with me on the development
-of  the theoretical  foundations of  the  PPS and  its application  to
-surface modeling.
+I would like to acknowledge Fernando Goes (Pixar, Inc.) for suggesting
+class  design  of the  PPS  class.   I am  also  very  grateful to  my
+co-authors  and  collaborators,  Luiz Velho  (IMPA-RJ,  Brazil),  Luis
+Gustavo Nonato (ICMC-USP, Brazil), Dianna Xu (Bryn Mawr College, USA),
+Jean Gallier  (UPenn, USA), and  Dimas Martínez Morera  (UFAL, Brazil)
+for working with me on  the development of the theoretical foundations
+of the PPS and its application to surface modeling.
 
 */
 
