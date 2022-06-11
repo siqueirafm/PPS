@@ -1,0 +1,936 @@
+//-----------------------------------------------------------------------------
+
+/** \page intro Introduction
+
+The <strong>Parametric Pseudo  Surface (PPS)</strong> Library consists
+of a set  of C++ classes for building  smooth (i.e., \f$C^{\infty}\f$)
+surfaces from  triangle meshes. The  resulting surfaces are  images in
+\f$R^3\f$ of  two-dimensional parametric pseudo  manifolds. This means
+that   the  surfaces   are  the   union   of  the   images  of   local
+parametrizations defined on  open sets in \f$R^2\f$. The  union of the
+images  of the  parametrization domains  covers the  surface,  and the
+parametrizations allow us to do  calculus on the surface through their
+two-dimensional domains.
+
+A detailed discussion on parametric pseudo manifolds can be found in
+
+\li   Siqueira,   M.,   Xu,   D.,   Gallier,   J.   "Construction   of
+\f$C^{\infty}\f$-surfaces  from  triangular  meshes  using  parametric
+pseudo-manifolds",   Technical  Report  MS-CIS-08-14,   Department  of
+Computer and Information Science, University of Pennsylvania, 2008.
+
+A shorter discussion on parametric pseudo manifolds can be found in
+
+\li Siqueira, M., Xu, D., Nonato, L.  G., Morera, D.  M., Gallier, J.,
+Velho, L. "A new construction  of smooth surfaces from triangle meshes
+using  parametric pseudo-manifolds",  Computer  Graphics, 33(3),  June
+2009, p. 331-340.
+
+*/
+
+//-----------------------------------------------------------------------------
+
+/** \page install Installing and compiling the library
+
+The  PPS library  can be  easily installed  by unzipping  the  file \c
+pps-distribution.zip.  After  doing that,  one should see  a directory
+named \c pps-distribution with the  files \c install.sh and \c run.sh,
+and  subdirectories  "bin", "data",  "dcel",  "doc", "lib",  "offlib",
+"pps",  "ppsfrompnt",  and   "ppsfromloop"  inside.   To  compile  the
+library, just execute
+
+\code
+sh install.sh
+\endcode
+
+If  everything goes  as expected,  one should  see the  executables \c
+sampler-loop and  \c sampler-pnt inside directory "bin".   To run some
+examples, execute the script \c run.sh or read section \ref example to
+learn more about the test code.
+
+The  current version  of  the library  was  successfully compiled  and
+tested using the following operating systems / compilers.
+
+\li Linux / GNU gcc 4.4  
+\li Mac OSX 10.6 / GNU gcc 4.2 
+
+*/
+
+//-----------------------------------------------------------------------------
+
+/** \page api The PPS class API
+
+The main class of the PPS library is also called \c PPS. The class has
+a constructor that  takes in a triangle mesh and builds  a PPS. The \c
+PPS class is abstract, which means you must implement a concrete class
+from it  in order to use  the library. The  implementation details are
+given later on. In particular, the derived class
+must implement  several virtual methods related to  the data structure
+representing the triangle  mesh, and one virtual method  to evaluate a
+point on a surface defined over the mesh.
+
+Data structure related methods define  a generic mesh API, which makes
+the PPS  library independent from any particular  mesh data structure.
+All the  user has to  do is to  implement those virtual  methods using
+her/his own data  structure. If the user is not  willing to spend time
+on this extra effort, she/he  can use the DCEL data structure provided
+with the PPS  library. 
+
+The generic mesh API defines  a "virtual" mesh consisting of vertices,
+half-edges, edges, and faces. Those elements are denoted by \c Vertex,
+\c Halfedge,  \c Edge,  and \c Face,  respectively.  If the  user data
+structure does not have one or  more of those elements or does not use
+the  exact same  name for  them, the  user must  rename them  using \c
+typedef.
+
+To be more specific, the \c PPS class has a parameter, called \c Mesh,
+which  must be  instantiated  with the  type  of the  input mesh  data
+structure:
+
+\code
+template < typename Mesh >
+class PPS {
+public:
+  ...
+\endcode
+
+When the user defines a concrete class from the \c PPS class, the user
+can specifiy the actual type of the mesh data structure. For instance,
+the user can  define the class \c myPPS  specifying the data structure
+\c myMesh:
+
+\code
+class myPPS : public PPS< myMesh > {
+public:
+  ...
+\endcode
+
+The \c PPS class constructor takes in a pointer to an object of the \c
+Mesh  class.  This  pointer  value  is  then  assigned  to  a  private
+attribute, \c pps::PPS::_mesh, of the class:
+
+\code
+PPS( Mesh* mesh ) : _mesh( mesh ) , ...
+{}
+\endcode
+
+In  addition  to the  constructor  above, the  API  of  the PPS  class
+contains  a method,  called  \c pps::PPS::eval_pps,  which computes  a
+point on  the surface defined  by the class.
+
+The method
+
+\code
+void eval_pps( Face* face , double u , double v , double w , double& x , double& y , double& z ) const ;
+\endcode
+
+takes in a  pointer to a face (i.e., a triangle)  of the triangle mesh
+and the  barycentric coordinates, \f$(u, v,  w)\f$, of a  point in the
+face.   These barycentric  coordinates are  given with  respect  to an
+affine  frame defined by  the three  vertices of  the given  face. The
+remaining parameters  are the Cartesian coordinates,  \f$(x, y, z)\f$,
+of a point on the surface defined by the PPS. As you may have noticed,
+there is  an implicit  one-to-one correspondence between  the triangle
+mesh  and  the  surface: for  each  point  on  the  mesh, there  is  a
+(distinct) point on  the surface, and vice-versa. So,  the mesh itself
+can be viewed as a "parameter space". This rationale behind this "user
+interface" is  to hide the  PPS local parametrizations from  the user.
+The same  sort of correspondence  is employed by the  exact evaluation
+algorithms  for  subdivision  surfaces,  as  well  as  algorithms  for
+computing parametric  surfaces over arbitrary meshes  using the "patch
+stitching" paradigm.
+
+Along with several public methods related to the generic mesh API, the
+methods \c  pps::PPS::PPS and \c pps::PPS::eval_pps  are currently the
+only methods available  in the API of the PPS  class. I (the developer
+of the PPS  library) am currently working on an  extension of this API
+to include methods for  computing derivatives and several differential
+properties.
+
+*/
+
+//-----------------------------------------------------------------------------
+
+/** \page mesh The generic mesh API
+
+The \c Mesh  object is assumed to have twenty  six methods, which form
+the generic mesh  API.  These methods are accessed by  the \c PPS code
+through the  pointer \c pps::PPS::_mesh.  As we mentioned  before, the
+mesh data structure  is also assumed to have the  elements \c Face, \c
+Vertex,  \c  Edge,  and \c  Halfedge.  So,  in  the beginning  of  the
+definition of class \c PPS, we define those types as:
+
+\code
+  /**
+   * \typedef Vertex
+   *
+   * \brief Definition of a type name for the mesh vertices.
+   */
+  typedef typename Mesh::Vertex Vertex ;
+    
+  /**
+   * \typedef Halfedge
+   *
+   * \brief Definition of a type name for the mesh half-edges. 
+   */
+  typedef typename Mesh::Halfedge Halfedge ;
+      
+  /**
+   * \typedef Edge
+   *
+   * \brief Definition of a type name for the mesh edges.
+   */
+  typedef typename Mesh::Edge Edge ;
+    
+  /**
+   * \typedef Face
+   *
+   * \brief Definition of a type name for the mesh faces. 
+   */
+  typedef typename Mesh::Face Face ;
+\endcode
+
+So, the user  must make sure that her/his  mesh data structure defines
+those elements  as well.
+
+We also  define iterators for faces,  edges, and vertices  of the mesh
+inside class \c PPS:
+
+\code       
+  /**
+   * \typedef VertexIterator
+   *
+   * \brief Definition of a type name for the vertex iterators. 
+   */
+  typedef typename Mesh::VertexIterator VertexIterator ;
+      
+  /**
+   * \typedef EdgeIterator
+   *
+   * \brief Definition of a type name for the edge iterators.
+   */
+  typedef typename Mesh::EdgeIterator EdgeIterator ;
+      
+  /**
+   * \typedef FaceIterator.
+   *
+   * \brief Definition of a type name for the face iterators.
+   */
+  typedef typename Mesh::FaceIterator FaceIterator ;
+\endcode  
+
+Here, we list and discuss all pure virtual methods of the PPS library,
+which must  be implemented by the  user. There are  exactly 26 methods
+related to the generic mesh API:
+
+\code
+virtual bool mesh_has_boundary() const = 0 ;
+\endcode
+
+determines if  the mesh given to  the \c PPS class  constructor has an
+empty boundary, which must always be  the case. So, the method is used
+by the \c PPS class constructor to assert a pre-condition.
+
+\code
+virtual bool mesh_is_simplicial() const = 0 ;
+\endcode
+
+determines if the mesh given to the \c PPS class constructor is indeed
+a  triangle mesh boundary,  which must  always be  the case.   So, the
+method  is  used  by  the   \c  PPS  class  constructor  to  verify  a
+pre-condition.
+
+\code
+virtual Vertex* get_org( Halfedge* h ) const = 0 ;
+\endcode
+
+returns the origin  vertex of a given half-edge  of the input triangle
+mesh.
+
+\code    
+virtual Vertex* get_dst( Halfedge* h ) const = 0 ;
+\endcode
+
+returns  the destination  vertex of  a  given half-edge  of the  input
+triangle mesh.
+
+\code    
+virtual Edge* get_edge( Halfedge* h ) const = 0 ;
+\endcode
+
+returns the edge a given  half-edge of the input triangle mesh belongs
+to.
+
+\code
+virtual Face* get_face( Halfedge* h ) const = 0 ;
+\endcode
+
+returns the face a given  half-edge of the input triangle mesh belongs
+to.
+
+\code
+virtual Halfedge* get_prev( Halfedge* h ) const = 0 ;
+\endcode
+
+returns  the  half-edge that  precedes  a  given  input triangle  mesh
+half-edge  in  the  face   cycle  of  half-edges  that  contains  both
+half-edges.
+
+\code
+virtual Halfedge* get_next( Halfedge* h ) const = 0 ;
+\endcode
+
+returns  the  half-edge that  succeeds  a  given  input triangle  mesh
+half-edge  in  the  face   cycle  of  half-edges  that  contains  both
+half-edges.
+
+\code
+virtual Halfedge* get_mate( Halfedge* h ) const = 0 ;
+\endcode
+
+returns the mate of a given half-edge of the input triangle mesh.
+
+\code
+virtual Halfedge* get_halfedge( Face* face ) const = 0 ;
+\endcode
+
+returns the first half-edge of the cycle of half-edges of a given face
+of the input triangle mesh.
+
+\code
+virtual Halfedge* get_halfedge( Vertex* vertex ) const = 0 ;
+\endcode
+
+returns  one half-edge  with origin  at a  given vertex  of  the input
+triangle mesh. It  is assumed that this method  will always return the
+same half-edge  (as more than one  half-edge may have  the same origin
+vertex).
+
+\code
+virtual unsigned int get_degree( Vertex* vertex ) const = 0 ;
+\endcode
+
+returns the degree  of a given vertex of the  input triangle mesh. The
+degree of a vertex is the number of edges incident to the vertex.
+
+\code
+virtual Bezier* get_shape_function( Vertex* vertex ) const = 0 ;
+\endcode
+
+returns  the shape  function associated  with  a given  vertex of  the
+triangle  mesh.  The  shape  function is  a rectangular  B&eacute;zier
+patch.   Note that  this shape  function is  not given  as  input, but
+calculated  by the \c  PPS class  constructor for  each vertex  of the
+input triangle mesh.  However, the  user data structure must provide a
+vertex attribute that  is a pointer to a  B&eacute;zier patch, so that
+the \c PPS  class constructor can store the  B&eacute;zier patch along
+with the vertex.
+
+\code
+virtual void set_shape_function( Vertex* vertex, Bezier* patch ) = 0 ;
+\endcode
+
+assigns a shape function to a given vertex of the input triangle mesh.
+
+\code
+virtual VertexIterator vertices_begin() const = 0 ;
+\endcode
+
+creates a  sequence of  vertices of the  input triangle mesh  and then
+returns a vertex iterator to the first vertex of this sequence.
+
+\code
+virtual bool is_done( const VertexIterator& iterator ) const = 0 ;
+\endcode
+
+returns a logic value true if  a given vertex iterator has reached the
+end of its associated vertex sequence; otherwise, it returns the logic
+value false.
+
+\code
+virtual void move_forward( VertexIterator& iterator ) const = 0 ;
+\endcode
+
+makes a vertex  iterator point to the vertex  succeeding its currently
+pointed vertex in its associated input triangle mesh vertex sequence.
+
+\code
+virtual Vertex* get_vertex( const VertexIterator& iterator ) const = 0 ;
+\endcode 
+
+returns  the  current  input  triangle  mesh vertex  of  the  sequence
+associated with a given vertex iterator.
+    
+\code
+virtual EdgeIterator edges_begin() const = 0 ;
+\endcode
+
+creates  a sequence  of  edges of  the  input triangle  mesh and  then
+returns an edge iterator pointing to the first edge of this sequence.
+
+\code
+virtual bool is_done( const EdgeIterator& iterator ) const = 0 ;
+\endcode
+
+returns a  logic value true if  a given edge iterator  has reached the
+end of its  associated edge sequence; otherwise, it  returns the logic
+value false.
+
+\code
+virtual void move_forward( EdgeIterator& iterator ) const = 0 ;
+\endcode
+   
+makes  an edge  iterator point  to the  edge succeeding  its currently
+pointed edge in its associated input triangle mesh edge sequence.
+
+\code 
+virtual Edge* get_edge( const EdgeIterator& iterator ) const = 0 ;
+\endcode 
+
+returns  the  current  input   triangle  mesh  edge  of  the  sequence
+associated with a given edge iterator.
+
+\code
+virtual FaceIterator faces_begin() const = 0 ;
+\endcode 
+
+creates  a sequence  of  faces of  the  input triangle  mesh and  then
+returns a face iterator pointing to the first face of this sequence.
+
+\code
+virtual bool is_done( const FaceIterator& iterator ) const = 0 ;
+\endcode
+
+returns a  logic value true if  a given face iterator  has reached the
+end of its  associated face sequence; otherwise, it  returns the logic
+value false.
+    
+\code
+virtual void move_forward( FaceIterator& iterator ) const = 0 ;
+\endcode
+
+makes  a face  iterator point  to  the face  succeeding its  currently
+pointed face in its associated input triangle mesh face sequence.
+
+\code    
+virtual Face* get_face( const FaceIterator& iterator ) const = 0 ;
+\endcode
+
+returns  the  current  input   triangle  mesh face  of  the  sequence
+associated with a given face iterator.
+
+*/
+
+//--------------------------------------------------------------------
+
+/** \page geometry Defining geometry
+
+To add more flexibility to the PPS library, we ask the user to provide
+a  surface  to be  approximated  by the  surface  defined  by the  PPS
+class. Why? We believe the main  reason for using a surface defined by
+a PPS is its higher degree of continuity. It is a well-known fact that
+higher  order of  continuity surfaces  obtained from  other approaches
+(i.e.,  as subdivision  surfaces or  by the  patch-stitching paradigm)
+have  poor visual  quality, as  opposed to  lower order  of continuity
+surfaces. To avoid  this kind of problem, we  created a procedure that
+defines the geometry  of a PPS by "mimicking" the  geometry of a given
+surface defined over  the input mesh.  The given  surface can have any
+degree  of continuity  (but  it  must be  at  least continuous).   Our
+procedure ensures  that the visual quality  of a PPS  is basically the
+same as  the visual quality of  the given surface. So,  by providing a
+good visual quality, lower degree  of continuity surface as input, the
+user can  obtain a  good visual quality,  higher degree  of continuity
+surface as output.
+
+How can the user provide a surface defined over the mesh? The user can
+do that by implementing a pure virtual method of the PPS class, called
+\c pps::PPS::eval_surface.
+
+The method
+
+\code
+virtual void eval_surface( Face* face , double u , double v , double w , double& x , double& y , double& z ) const = 0 ;
+\endcode
+
+is a pure virtual method that computes a point on the surface provided
+by the user. The  method takes in a pointer to a  face of the triangle
+mesh  (i.e., a  triangle) and  the parameter  barycentric coordinates,
+\f$(u,v,w)\f$, and then computes  the coordinates \f$(x,y,z)\f$ of the
+point  on  the surface  corresponding  to  the  parameter point  whose
+barycentric coordinates are \f$(u,v,w)\f$. These coordinates are given
+with respect to  the affine frame (i.e., a  triangle) that defines the
+parametric domain of  the surface patch associated with  the mesh face
+pointed  by the  parameter \c  face.   Once the  user implements  this
+method in a class that derives from the \c PPS class, the \c PPS class
+constructor  can use  it to  compute an  approximation to  the surface
+defined by the user.
+
+*/
+
+//-----------------------------------------------------------------------------
+
+/** \page concrete A concrete class for building a PPS
+
+This  section discusses  the implementation  of a  concrete  class for
+building  parametric pseudo  surfaces  using the  PPS  library. As  we
+mentioned  before, a  concrete class  must  inherits from  the \c  PPS
+class,  and  then  implement  the  pure virtual  method  described  in
+sections \ref mesh  and \ref geometry.  In order to  do that, the user
+must choose a data structure for representing the input triangle mesh,
+and define a  parametric surface over the triangle  mesh. Here, let us
+assume that we choose the DCEL data structure (the one that comes with
+the PPS library  code - see directory "dcel").  In  addition, let us use
+the union  of PN  triangle surface patches  as the  parametric surface
+defined over  the triangle mesh.  This  is an extremely  simple way of
+defining  cubic  (triangular) B&eacute;zier  patches  over mesh  faces
+which   join  with   \f$C^0\f$-continuity  along   common   edges  and
+vertices. You can find more details on PN triangle surface patches in
+
+\li Vlachos,  A., Peters, J., Boyd,  C. and Mitchell, J.  L. Curved PN
+triangles.  Proceedings  of  the  2001  symposium  on  Interactive  3D
+graphics, 2001, p. 159-166.
+
+The class we are about to define is in the file \c ppsfrompnt.h inside
+directory "ppsfrompnt".  We named the  class \c PPSfromPNT.   The code
+starts by including the files below:
+
+\code
+#include "bezier.h"               // pps::Bezier
+#include "pps.h"                  // pps::PPS
+
+#include "surface.h"              // dcel::Surface
+#include "pntriangle.h"           // PNTriangle
+\endcode
+
+File \c  bezier.h contains  the definition of  class \c  Bezier, which
+represents  the shape functions  used by  the parametrizations  of the
+parametric pseudo surfaces.  File \c  pps.h contains the \c PPS class.
+File  \c  surface.h is  the  main file  of  the  DCEL data  structure.
+Finally,  file \c pntriangle.h  contains an  implementation of  the PN
+triangle surface.
+
+Next, we include three more files, which have to do with attributes we
+assign  with vertex,  half-edge, and  face elements  of the  DCEL data
+structure:
+
+\code
+#include "vertex_attribute.h"     // VertexAttribute
+#include "halfedge_attribute.h"   // HalfedgeAttribute
+#include "face_attribute.h"       // FaceAttribute
+\endcode
+
+Finally, we can start defining the \c ppsfrompnt::PPSfromPNT class:
+
+\code
+class PPSfromPNT : public PPS< dcel::Surface< VertexAttribute , FaceAttribute , int , HalfedgeAttribute > >
+{
+public:
+  ...
+\endcode
+
+The above code defines a class named \c PPSfromPNT as a child of class
+\c PPS.  Note that class PPS  is parametrized by the type of the input
+triangle mesh:
+
+\code
+dcel::Surface< VertexAttribute , FaceAttribute , int , HalfedgeAttribute >
+\endcode
+
+This means  that \c  dcel::Surface< VertexAttribute ,  FaceAttribute ,
+int , HalfedgeAttribute > is our  triangle mesh type. The \c PPS class
+has a  pointer, called  \c pps::PPS::_mesh, for  an object of  type \c
+Mesh, which is the parameter of  the \c PPS class.  So, the above code
+instantiates  this  parameter  as  being  \c  dcel::Surface,  i.e.,  a
+triangle mesh represented by the  DCEL data structure. Note that class
+\c  dcel::Surface has itself  four parameters,  which account  for the
+types  of the  attributes of  its  vertex, face,  edge, and  half-edge
+attributes.   We  only  define  attributes for  vertices,  faces,  and
+half-edges.   Those  attributes  are  represented by  the  classes  \c
+ppsfrompnt::VertexAttribute,  \c   ppsfrompnt::FaceAttribute,  and  \c
+ppsfrompnt::HalfedgeAttribute, respectively.
+
+The code  for the  \c PPSfromPNT class  constructor assigns  the given
+triangle  mesh to  the  pointer \c  pps::PPS::_mesh, initializes  some
+attributes,  and  then calls  a  private  method  to build  the  shape
+functions assigned with each vertex:
+
+\code
+PPSfromPNT::PPSfromPNT( Surface* mesh ) : PPS< Surface >( mesh )
+{
+  //
+  // Sets the owner of each half-edge attribute set.
+  //
+  for ( EdgeIterator eit = edges_begin() ; !is_done( eit ) ; move_forward( eit ) ) {
+    Edge* edge = get_edge( eit ) ;
+
+    Halfedge* h1 = edge->get_first_halfedge() ;
+    Halfedge* h2 = edge->get_second_halfedge() ;
+
+    h1->get_attributes().set_owner( h1 ) ;
+    h2->get_attributes().set_owner( h2 ) ; 
+  }
+
+  //
+  // Create the PN triangle surface.
+  //
+  build_pnt_surface() ;
+}
+\endcode
+
+What really  matters in  the above code  is the initialization  of the
+pointer pps::PPS::_mesh, as  the rest of the code  is dependent on our
+choices of the DCEL data structure  and of the PN triangle surface. In
+particular, the initialization of attributes  is related to the way we
+store the  PPS information  in the DCEL  data structure. In  turn, the
+method \c  build_pnt_surface() constructs a PN triangle  for each face
+of  the mesh.   So, if  another surface  were adopted  by the  user, a
+distinct function would be used to create the surface patches.
+
+Besides the constructor and destructor of the \c PPSfromPNT class, the
+only public method is 
+
+\code
+void
+PPSfromPNT::eval_surface(
+			   Face* face , 
+			   double u ,
+			   double v ,
+			   double w ,
+			   double& x ,
+			   double& y ,
+			   double& z
+			  )
+  const 
+{
+  //
+  // Make sure the face has a PN triangle associated with it.
+  //
+  PNTriangle* patch = face->get_attributes().get_patch() ; 
+
+  assert( patch != 0 ) ;
+
+  //
+  // Make sure the coordinates are non-negative and add up to 1.
+  //
+  assert( 
+	  ( u >= 0 ) && ( u <= 1 ) && ( v >= 0 ) && 
+	  ( v <= 1 ) && ( w >= 0 ) && ( w <= 1 ) &&
+	  ( fabs( 1 - ( u + v + w ) ) <= 1e-15 )
+	 ) ;
+  //
+  // Evaluate the patch.
+  //
+  patch->point( u , v , x , y , z ) ;
+}
+\endcode
+
+The  above method  is  our implementation  of  the corresponding  pure
+virtual method  of class \c PPS. The  method computes a point  on a PN
+triangle  surface,  which  is  then  used  by the  \c  PPS  class  for
+generating the shape functions  and parametrizations of the parametric
+pseudo surface. Note that the above method simply gets the PN triangle
+patch associated  with the given face,  and then samples  the patch at
+the given  point. 
+
+The remaining  relevant methods  of class \c  PPSfromPNT are  the ones
+that implement the  other twenty six pure virtual  methods of class \c
+PPS. The  implementation of these methods are  completely dependent on
+the DCEL data structure, but they are extremely simple, as can be seen
+below:
+
+\code
+inline bool mesh_has_boundary() const
+{
+  return false ;
+}
+\endcode
+
+\code
+inline bool mesh_is_simplicial() const
+{
+  return true ;
+}
+\endcode
+
+\code
+inline unsigned int get_id( Halfedge* h ) const
+{
+  return h->get_attributes().get_pps_id() ;
+}
+\endcode
+
+\code
+inline Vertex* get_org( Halfedge* h ) const
+{
+  return h->get_origin() ;
+}
+\endcode
+
+\code
+inline Vertex* get_dst( Halfedge* h )  const
+{
+  return h->get_next()->get_origin() ;
+}
+\endcode
+
+\code
+inline Edge* get_edge( Halfedge* h ) const
+{
+  return h->get_edge() ;
+}
+\endcode
+
+\code
+inline Face* get_face( Halfedge* h ) const
+{
+  return h->get_face() ;
+}
+\endcode
+
+\code
+inline Halfedge* get_prev( Halfedge* h ) const
+{
+  return h->get_prev() ;
+}
+\endcode
+
+\code
+inline Halfedge* get_next( Halfedge* h ) const
+{
+  return h->get_next() ;
+}
+\endcode
+  
+\code
+inline Halfedge* get_mate( Halfedge* h ) const
+{
+  return h->get_mate() ;
+}
+\endcode
+    
+\code
+inline Halfedge* get_halfedge( Face* face ) const
+{
+  return face->get_halfedge() ;
+}
+\endcode
+
+\code
+inline Halfedge* get_halfedge( Vertex* vertex ) const
+{
+  return vertex->get_halfedge() ;
+}
+\endcode
+
+\code
+inline unsigned get_degree( Vertex* vertex ) const
+{
+  return vertex->get_halfedge()->get_attributes().get_origin_vertex_degree() ;
+}
+\endcode
+
+\code
+inline Bezier* get_shape_function( Vertex* vertex ) const
+{
+  return vertex->get_attributes().get_patch() ;
+}
+\endcode    
+    
+\code
+inline void set_shape_function( Vertex* vertex, Bezier* patch )
+{
+  vertex->get_attributes().set_patch( patch ) ;
+}
+\endcode
+
+\code
+inline VertexIterator vertices_begin() const
+{
+  return get_mesh()->vertices_begin() ;
+}
+\endcode
+
+\code
+inline bool is_done( const VertexIterator& iterator ) const
+{
+  return iterator == get_mesh()->vertices_end() ;
+}
+\endcode
+
+\code
+inline void move_forward( VertexIterator& iterator ) const
+{
+  ++iterator ;
+}
+\endcode
+
+\code
+inline Vertex* get_vertex( const VertexIterator& iterator ) const
+{
+  return *iterator ;
+}
+\endcode
+
+\code
+inline EdgeIterator edges_begin() const
+{
+  return get_mesh()->edges_begin() ;
+}
+\endcode
+
+\code
+inline bool is_done( const EdgeIterator& iterator ) const
+{
+  return iterator == get_mesh()->edges_end() ;
+}
+\endcode
+
+\code
+inline void move_forward( EdgeIterator& iterator ) const
+{
+  ++iterator ;
+}
+\endcode
+
+\code
+inline Edge* get_edge( const EdgeIterator& iterator ) const
+{
+  return *iterator ;
+}
+\endcode
+
+\code
+inline FaceIterator faces_begin() const
+{
+  return get_mesh()->faces_begin() ;
+}
+\endcode
+
+\code
+inline bool is_done( const FaceIterator& iterator ) const
+{
+  return iterator == get_mesh()->faces_end() ;
+}
+\endcode
+
+\code
+inline void move_forward( FaceIterator& iterator ) const
+{
+  ++iterator ;
+}
+\endcode
+
+\code
+inline Face* get_face( const FaceIterator& iterator ) const
+{
+  return *iterator ;
+}
+\endcode
+
+If  the  user wishes  to  use  the DCEL  data  structure  as the  data
+structure for  representing the input  triangle mesh, then  she/he can
+use (as it  is) the implementation above for  the pure virtual methods
+of class \c PPS. However, if  another data structure is used, then the
+user must implement the methods above in a similar way. We really hope
+that the flexibility  offered by the \c PPS class  pays off the effort
+need to implement a derived class.
+
+*/
+
+//-----------------------------------------------------------------------------
+
+/** \page example Sample code and examples
+
+We provide a simple driver for  testing the PPS library. The test code
+is in the  file \c sampler-pnt inside directory  "bin".  The test code
+generates a PPS from a  PNT surface, using the \c pps::PPS::PPSfromPNT
+class, and then samples the surface in a midpoint triangle subdivision
+manner.  The code takes in a parameter which defines the sampling rate
+(a  nonnegative integer  number).  The  larger the  sampling  rate the
+larger the number of sample points. The test code output is a triangle
+mesh whose vertices  are the sample points. Both  the input and output
+meshes are stored  in OFF files. The command-line  to execute the test
+code is as follows:
+
+\code
+sampler-pnt <arg1> <arg2>
+\endcode
+
+where
+
+\li \c arg1 is the name of an OFF file describing the input triangle mesh.
+
+\li \c arg2 is the sampling rate or level-of-detail of the output mesh.
+
+For instance,
+
+\code
+sampler-pnt ./data/knot 3
+\endcode
+
+generates two files: \c  knot-pnt-pps-3.off and \c knot-pnt-3.pps. The
+former file contains  a triangle mesh whose vertices  are defined over
+the PPS, while the latter file contains a triangle mesh whose vertices
+are defined over the PNT surface from which the PPS was generated.
+
+You can  find some triangle  meshes inside directory "data".   You can
+also   find  code   for   generating  PPS   from  Loop's   subdivision
+surfaces.  This code is  inside directory  "ppsfromloop" and  has been
+partially documented.
+
+*/
+
+//-----------------------------------------------------------------------------
+
+/** \page lic License
+
+<p><strong>Copyright Notice</strong>
+
+Copyright &copy; 2010 Marcelo Siqueira.  All rights reserved.
+
+<p><strong>Terms and Conditions</strong>
+
+<p>Permission  is  hereby  granted,  free  of charge,  to  any  person
+obtaining a  copy of this software and  associated documentation files
+(the  "Software"),  to  deal  in  the  Software  without  restriction,
+including without  limitation the rights to use,  copy, modify, merge,
+publish, distribute, and/or sell copies of the Software, and to permit
+persons to whom the Software is  furnished to do so, provided that the
+above  copyright notice(s) and  this permission  notice appear  in all
+copies of the Software and that both the above copyright notice(s) and
+this permission notice appear in supporting documentation.
+
+<p>THE SOFTWARE  IS PROVIDED  "AS IS", WITHOUT  WARRANTY OF  ANY KIND,
+EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR  A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF  THIRD PARTY  RIGHTS. IN  NO EVENT  SHALL THE  COPYRIGHT  HOLDER OR
+HOLDERS  INCLUDED IN  THIS  NOTICE BE  LIABLE  FOR ANY  CLAIM, OR  ANY
+SPECIAL INDIRECT  OR CONSEQUENTIAL DAMAGES, OR  ANY DAMAGES WHATSOEVER
+RESULTING FROM LOSS  OF USE, DATA OR PROFITS, WHETHER  IN AN ACTION OF
+CONTRACT, NEGLIGENCE  OR OTHER TORTIOUS  ACTION, ARISING OUT OF  OR IN
+CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+<p>Except as contained in this  notice, the name of a copyright holder
+shall not be used in advertising or otherwise to promote the sale, use
+or other dealings in this Software without prior written authorization
+of the copyright holder.  <br>
+
+*/
+
+//-----------------------------------------------------------------------------
+
+/** \page ack Acknowledgements
+
+I  would like to  acknowledge Fernando  Goes, who  is currently  a PhD
+student at Caltech-USA, for suggesting  class design of the PPS class.
+I am also very grateful to my co-authors and collaborators, Luiz Velho
+(IMPA-RJ, Brazil),  Luis Gustavo Nonato (ICMC-USP,  Brazil), Dianna Xu
+(Bryn  Mawr  College,  USA),  Jean  Gallier (UPenn,  USA),  and  Dimas
+Martínez Morera (UFAL, Brazil) for  working with me on the development
+of  the theoretical  foundations of  the  PPS and  its application  to
+surface modeling.
+
+*/
+
+//-----------------------------------------------------------------------------
+

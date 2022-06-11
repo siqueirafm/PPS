@@ -1,17 +1,16 @@
 # Prerequisites
 *.d
 
-# Compiled Object files
+# Compiled object files
 *.slo
 *.lo
 *.o
-*.obj
 
-# Precompiled Headers
+# Precompiled headers
 *.gch
 *.pch
 
-# Compiled Dynamic libraries
+# Compiled dynamic libraries
 *.so
 *.dylib
 *.dll
@@ -20,7 +19,7 @@
 *.mod
 *.smod
 
-# Compiled Static libraries
+# Compiled static libraries
 *.lai
 *.la
 *.a
@@ -30,3 +29,19 @@
 *.exe
 *.out
 *.app
+
+# Directory build
+**/build
+
+# Directory output
+**/Output
+
+# Directory html
+**/html
+
+# Directory latex
+**/latex
+
+# Emacs backup files
+*~
+
