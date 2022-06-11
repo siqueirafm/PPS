@@ -16,8 +16,6 @@ The code is organized as follows:
 * script         - subdirectory containing a shell script to execute the examples
 * src            - subdirectory containing the source files of libraries and applications
 
-A detailed documentation of the code can be found in the file refman.pdf inside directory doc.
-
 In a nutshell, this code implements the surface representation described in the papers
 
 Jean Gallier and Dianna Xu and Marcelo Siqueira  
@@ -29,7 +27,7 @@ and
 
 Marcelo Siqueira and Dianna Xu and Jean Gallier and Luis Gustavo Nonato and Dimas Martínez Morera and Luiz Velho  
 A new construction of smooth surfaces from triangle meshes using parametric pseudo-manifolds  
-Computers & Graphics, 33(3), 2009, p. 331-340
+Computers & Graphics, 33(3), 2009, p. 331-340  
 [DOI](https://doi.org/10.1016/j.cag.2009.03.017)  
 
 ## INSTALLATION
@@ -37,9 +35,11 @@ Computers & Graphics, 33(3), 2009, p. 331-340
 You need cmake version 3.14 or higher and a C++ compiler that supports standard 17.  
 To build the code, open a terminal, enter directory PPS, and run cmake as follows:  
 
+```
 cmake -S . -B build  
 cmake --build build --config Release  
 cmake --install build --prefix <full to the PPS directory or where else you want to have the executables>
+```
 
 If you have doxygen installed on your machine, the build will try to generate documentation too.
 
@@ -47,11 +47,15 @@ If you have doxygen installed on your machine, the build will try to generate do
 
 You can run the executables 'sample-pnt' and 'sample-loop' on the data files in subdirectory
 
-  <path to directory PPS>/examples  
+```
+  <path to directory PPS>/examples
+```
 
-by executing the shell script 'run.sh' that you find in subdirectory  
+by executing the shell script 'run.sh' in subdirectory  
 
-  <path to directory PPS>/script  
+```
+  <path to directory PPS>/script
+```
 
 ##  LAST UPDATE
 
