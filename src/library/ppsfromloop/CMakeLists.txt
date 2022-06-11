@@ -32,6 +32,7 @@ target_include_directories(ppsfromloop
 target_compile_features(ppsfromloop PRIVATE cxx_std_17)
 
 if (MSVC)
+  set_source_files_properties(${PPSFROMLOOPLIB_SRC}/loop_eval.cpp PROPERTIES COMPILE_FLAGS "/wd4996")
   if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(ppsfromloop PRIVATE /W4 /WX- /O2 /MD)
   else ()
