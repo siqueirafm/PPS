@@ -12,14 +12,6 @@
  *
  * \version 1.0
  * \date December 2008
- *
- * \attention This program is distributed WITHOUT ANY WARRANTY, and it
- *            may be freely redistributed under the condition that the
- *            copyright notices  are not removed,  and no compensation
- *            is received. Private, research, and institutional use is
- *            free. Distribution of this  code as part of a commercial
- *            system  is permissible ONLY  BY DIRECT  ARRANGEMENT WITH
- *            THE AUTHOR.
  */
 
 #include "loop_eval.hpp"
